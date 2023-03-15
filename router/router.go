@@ -5,11 +5,14 @@ import (
 	"code/global"
 	"context"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
+	"github.com/go-playground/validator/v10"
 	"github.com/spf13/viper"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"net/http"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 )
@@ -37,7 +40,10 @@ func InitRouter() {
 	rgPublic := r.Group("/api/v1/public")
 	rgAuth := r.Group("/api/v1")
 
-	InitBasePlatformRoutes()
+	initBasePlatformRoutes()
+
+	// 自定义验证器
+	registCustValidator()
 
 	for _, fnRegistRoute := range gfnRouters {
 		fnRegistRoute(rgPublic, rgAuth)
@@ -73,6 +79,19 @@ func InitRouter() {
 	global.Logger.Info("Stop Server Success")
 }
 
-func InitBasePlatformRoutes() {
+func initBasePlatformRoutes() {
 	InitUserRouters()
+}
+
+func registCustValidator() {
+	if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+		_ = v.RegisterValidation("first_is_a", func(fl validator.FieldLevel) bool {
+			if value, ok := fl.Field().Interface().(string); ok {
+				if value != "" && strings.Index(value, "a") == 0 {
+					return true
+				}
+			}
+			return false
+		})
+	}
 }

@@ -4,6 +4,19 @@ mode:
 server:
   port: 8090
 
+db:
+  dsn: "root:lxj@tcp(127.0.0.1:3306)/lxj?charset=utf8mb4&parseTime=True&loc=Local"
+  MaxIdleConns: 10
+  MaxOpenConns: 10
+  SetConnMaxLifetime: 3600 # seconds
+
+redis:
+  url: localhost:6379
+
+jwt:
+  tokenExpire: 30 # minutes
+  signingKey: lxj # 签名使用的key
+
 log:
   MaxSize: 1 # 文件最大尺寸(M)，超限自动分割
   MaxBackups: 10 # 保留旧文件的最大个数

@@ -1,6 +1,8 @@
 package main
 
-import "code/cmd"
+import (
+	"code/cmd"
+)
 
 // @title Go-Web
 // @version 0.0.1
