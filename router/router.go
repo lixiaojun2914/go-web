@@ -3,6 +3,7 @@ package router
 import (
 	_ "code/docs"
 	"code/global"
+	"code/middleware"
 	"context"
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
@@ -36,6 +37,7 @@ func InitRouter() {
 	defer stop()
 
 	r := gin.Default()
+	r.Use(middleware.Cors())
 	//docs.SwaggerInfo.BasePath = "/api/v1"
 	rgPublic := r.Group("/api/v1/public")
 	rgAuth := r.Group("/api/v1")
@@ -81,6 +83,7 @@ func InitRouter() {
 
 func initBasePlatformRoutes() {
 	InitUserRouters()
+	InitHostRouters()
 }
 
 func registCustValidator() {

@@ -17,6 +17,14 @@ jwt:
   tokenExpire: 30 # minutes
   signingKey: lxj # 签名使用的key
 
+ansible:
+  user:
+    name: root,
+    password: lxj
+  shutdown:
+    args: "poweroff"
+
+
 log:
   MaxSize: 1 # 文件最大尺寸(M)，超限自动分割
   MaxBackups: 10 # 保留旧文件的最大个数

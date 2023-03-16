@@ -1,20 +1,22 @@
 package api
 
 import (
+	"code/service"
 	"code/service/dto"
 	"code/utils"
-	"errors"
-	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"reflect"
 )
 
 type UserApi struct {
+	BaseApi
+	Service *service.UserService
 }
 
 func NewUserApi() UserApi {
-	return UserApi{}
+	return UserApi{
+		BaseApi: NewBaseApi(),
+		Service: service.NewUserService(),
+	}
 }
 
 // @Tags 用户管理
@@ -25,37 +27,27 @@ func NewUserApi() UserApi {
 // @Success 200 {string} string "登陆成功"
 // @Failure 401 {string} string "登陆失败"
 // @Router /api/v1/public/user/login [post]
-func (u UserApi) Login(ctx *gin.Context) {
+func (m UserApi) Login(c *gin.Context) {
 	var iUserLoginDTO dto.UserLoginDTO
-	err := ctx.ShouldBind(&iUserLoginDTO)
+	err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iUserLoginDTO}).GetError()
 	if err != nil {
-		Fail(ctx, ResponseJson{
-			Msg: parseValidateErrors(err.(validator.ValidationErrors), &iUserLoginDTO).Error(),
+		return
+	}
+
+	iUser, err := m.Service.Login(iUserLoginDTO)
+	if err != nil {
+		m.Fail(ResponseJson{
+			Msg: err.Error(),
 		})
 		return
 	}
-	OK(ctx, ResponseJson{
-		Data: iUserLoginDTO,
+
+	token, _ := utils.GenerateToken(iUser.ID, iUser.Name)
+
+	m.OK(ResponseJson{
+		Data: gin.H{
+			"token": token,
+			"user":  iUser,
+		},
 	})
-}
-
-// 自定义校验器
-func parseValidateErrors(errs validator.ValidationErrors, target any) error {
-	var errResult error
-
-	// 通过反射获取指针指向元素的类型对象
-	fieleds := reflect.TypeOf(target).Elem()
-	for _, fieldErr := range errs {
-		fieled, _ := fieleds.FieldByName(fieldErr.Field())
-		errMessageTag := fmt.Sprintf("%s_err", fieldErr.Tag())
-		errMessage := fieled.Tag.Get(errMessageTag)
-		if errMessage == "" {
-			errMessageTag = fieled.Tag.Get("message")
-		}
-		if errMessage == "" {
-			errMessage = fmt.Sprintf("%s: %s Error", fieldErr.Field(), fieldErr.Tag())
-		}
-		errResult = utils.AppendError(errResult, errors.New(errMessage))
-	}
-	return errResult
 }
