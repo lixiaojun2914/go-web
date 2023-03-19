@@ -3,7 +3,6 @@ package router
 import (
 	"code/api"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func InitUserRouters() {
@@ -14,23 +13,14 @@ func InitUserRouters() {
 		{
 			rgPublicUser.POST("/login", userApi.Login)
 		}
+
 		rgAuthUser := rgAuth.Group("user")
 		{
-			rgAuthUser.GET("", func(ctx *gin.Context) {
-				ctx.AbortWithStatusJSON(http.StatusOK, gin.H{
-					"data": []map[string]any{
-						{"id": 1, "name": "zs"},
-						{"id": 2, "name": "lisi"},
-					},
-				})
-			})
+			rgAuthUser.POST("", userApi.AddUser)
+			rgAuthUser.POST("/list", userApi.GetUserList)
+			rgAuthUser.GET("/:id", userApi.GetUserByID)
+			rgAuthUser.PUT("/:id", userApi.UpdateUser)
+			rgAuthUser.DELETE("/:id", userApi.DeleteUserByID)
 		}
-
-		rgAuthUser.GET("/:id", func(ctx *gin.Context) {
-			ctx.AbortWithStatusJSON(http.StatusOK, gin.H{
-				"id":   1,
-				"name": "zs",
-			})
-		})
 	})
 }

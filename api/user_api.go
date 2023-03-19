@@ -4,7 +4,16 @@ import (
 	"code/service"
 	"code/service/dto"
 	"code/utils"
+	"fmt"
 	"github.com/gin-gonic/gin"
+)
+
+const (
+	ErrCodeAddUser     = 100011
+	ErrCodeGetUserById = 100012
+	ErrCodeGetUserList = 100013
+	ErrCodeUpdateUser  = 100014
+	ErrCodeDeleteUser  = 100015
 )
 
 type UserApi struct {
@@ -50,4 +59,106 @@ func (m UserApi) Login(c *gin.Context) {
 			"user":  iUser,
 		},
 	})
+}
+
+func (m UserApi) AddUser(c *gin.Context) {
+	var iUserAddDTO dto.UserAddDTO
+	if err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iUserAddDTO}).GetError(); err != nil {
+		return
+	}
+
+	file, _ := c.FormFile("file")
+	stFilePath := fmt.Sprintf("./upload/%s", file.Filename)
+	_ = c.SaveUploadedFile(file, stFilePath)
+	iUserAddDTO.Avatar = stFilePath
+
+	err := m.Service.AddUser(&iUserAddDTO)
+	if err != nil {
+		m.ServerFail(ResponseJson{
+			Code: ErrCodeAddUser,
+			Msg:  err.Error(),
+		})
+		return
+	}
+
+	m.OK(ResponseJson{
+		Data: iUserAddDTO,
+	})
+}
+
+func (m UserApi) GetUserByID(c *gin.Context) {
+	var iCommonIDDTO dto.CommonIDDTO
+	if err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iCommonIDDTO, BindUri: true}).GetError(); err != nil {
+		return
+	}
+
+	iUser, err := m.Service.GetUserByID(iCommonIDDTO)
+	if err != nil {
+		m.ServerFail(ResponseJson{
+			Code: ErrCodeGetUserById,
+			Msg:  err.Error(),
+		})
+		return
+	}
+
+	m.OK(ResponseJson{
+		Data: iUser,
+	})
+}
+
+func (m UserApi) GetUserList(c *gin.Context) {
+	var iUserListDTO dto.UserListDTO
+	if err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iUserListDTO}).GetError(); err != nil {
+		return
+	}
+
+	giUserList, nTotal, err := m.Service.GetUserList(iUserListDTO)
+	if err != nil {
+		m.ServerFail(ResponseJson{
+			Code: ErrCodeGetUserList,
+			Msg:  err.Error(),
+		})
+		return
+	}
+
+	m.OK(ResponseJson{
+		Data:  giUserList,
+		Total: nTotal,
+	})
+}
+
+func (m UserApi) UpdateUser(c *gin.Context) {
+	var iUserUpdateDTP dto.UserUpdateDTO
+	if err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iUserUpdateDTP, BindAll: true}).GetError(); err != nil {
+		return
+	}
+
+	err := m.Service.UpdateUser(iUserUpdateDTP)
+	if err != nil {
+		m.ServerFail(ResponseJson{
+			Code: ErrCodeUpdateUser,
+			Msg:  err.Error(),
+		})
+		return
+	}
+
+	m.OK(ResponseJson{})
+}
+
+func (m UserApi) DeleteUserByID(c *gin.Context) {
+	var iCommonIDDTO dto.CommonIDDTO
+	if err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iCommonIDDTO, BindUri: true}).GetError(); err != nil {
+		return
+	}
+
+	err := m.Service.DeleteUserByID(iCommonIDDTO)
+	if err != nil {
+		m.ServerFail(ResponseJson{
+			Code: ErrCodeDeleteUser,
+			Msg:  err.Error(),
+		})
+		return
+	}
+
+	m.OK(ResponseJson{})
 }
