@@ -7,8 +7,9 @@ import (
 	"time"
 )
 
+const DefaultDuration = 30 * 24 * 60 * 60 * time.Second
+
 var rdClient *redis.Client
-var nDuration = 30 * 24 * 60 * 60 * time.Second
 
 type RedisClient struct {
 }
@@ -27,8 +28,14 @@ func InitRedis() (*RedisClient, error) {
 	return &RedisClient{}, nil
 }
 
-func (rc *RedisClient) Set(key string, value any) error {
-	return rdClient.Set(context.Background(), key, value, nDuration).Err()
+func (rc *RedisClient) Set(key string, value any, rest ...any) error {
+	d := DefaultDuration
+	if len(rest) > 0 {
+		if v, ok := rest[0].(time.Duration); ok {
+			d = v
+		}
+	}
+	return rdClient.Set(context.Background(), key, value, d).Err()
 }
 
 func (rc *RedisClient) Get(key string) (any, error) {

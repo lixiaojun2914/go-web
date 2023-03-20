@@ -3,9 +3,8 @@ package api
 import (
 	"code/service"
 	"code/service/dto"
-	"code/utils"
-	"fmt"
 	"github.com/gin-gonic/gin"
+	"net/http"
 )
 
 const (
@@ -14,6 +13,7 @@ const (
 	ErrCodeGetUserList = 100013
 	ErrCodeUpdateUser  = 100014
 	ErrCodeDeleteUser  = 100015
+	ErrCodeLogin       = 100016
 )
 
 type UserApi struct {
@@ -38,20 +38,23 @@ func NewUserApi() UserApi {
 // @Router /api/v1/public/user/login [post]
 func (m UserApi) Login(c *gin.Context) {
 	var iUserLoginDTO dto.UserLoginDTO
-	err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iUserLoginDTO}).GetError()
-	if err != nil {
+	if err := m.BuildRequest(BuildRequestOption{Ctx: c, DTO: &iUserLoginDTO}).GetError(); err != nil {
 		return
 	}
 
-	iUser, err := m.Service.Login(iUserLoginDTO)
+	iUser, token, err := m.Service.Login(iUserLoginDTO)
+	if err == nil {
+		err = service.SetLoginUserTokenToRedis(iUser.ID, token)
+	}
+
 	if err != nil {
 		m.Fail(ResponseJson{
-			Msg: err.Error(),
+			Status: http.StatusUnauthorized,
+			Code:   ErrCodeLogin,
+			Msg:    err.Error(),
 		})
 		return
 	}
-
-	token, _ := utils.GenerateToken(iUser.ID, iUser.Name)
 
 	m.OK(ResponseJson{
 		Data: gin.H{
@@ -67,10 +70,10 @@ func (m UserApi) AddUser(c *gin.Context) {
 		return
 	}
 
-	file, _ := c.FormFile("file")
-	stFilePath := fmt.Sprintf("./upload/%s", file.Filename)
-	_ = c.SaveUploadedFile(file, stFilePath)
-	iUserAddDTO.Avatar = stFilePath
+	//file, _ := c.FormFile("file")
+	//stFilePath := fmt.Sprintf("./upload/%s", file.Filename)
+	//_ = c.SaveUploadedFile(file, stFilePath)
+	//iUserAddDTO.Avatar = stFilePath
 
 	err := m.Service.AddUser(&iUserAddDTO)
 	if err != nil {
