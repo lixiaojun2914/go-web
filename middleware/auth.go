@@ -22,7 +22,7 @@ const (
 	ErrCodeTokenRenew      = 10405
 
 	TokenName          = "Authorization"
-	TokenPrefix        = "Bearer: "
+	TokenPrefix        = "Bearer "
 	RenewTokenDuration = 10 * 60 * time.Second
 )
 
