@@ -41,6 +41,7 @@ func InitRouter() {
 	//docs.SwaggerInfo.BasePath = "/api/v1"
 	rgPublic := r.Group("/api/v1/public")
 	rgAuth := r.Group("/api/v1")
+	rgAuth.Use(middleware.Auth())
 
 	initBasePlatformRoutes()
 

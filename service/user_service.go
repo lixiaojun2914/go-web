@@ -31,9 +31,14 @@ func NewUserService() *UserService {
 	return userService
 }
 
-func SetLoginUserTokenToRedis(uid uint, token string) error {
-	return global.RedisClient.Set(strings.Replace(constants.LoginUserTokenRedisKey, "{ID}",
-		strconv.Itoa(int(uid)), -1), token, viper.GetDuration("jwt.tokenExpire")*time.Minute)
+func GenerateAndCacheLoginUserTokenToRedis(nUserID uint, stUserName string) (string, error) {
+	token, err := utils.GenerateToken(nUserID, stUserName)
+	if err == nil {
+		iUserID := strconv.Itoa(int(nUserID))
+		stRedisUserIDKey := strings.Replace(constants.LoginUserTokenRedisKey, "{ID}", iUserID, -1)
+		err = global.RedisClient.Set(stRedisUserIDKey, token, viper.GetDuration("jwt.tokenExpire")*time.Minute)
+	}
+	return token, err
 }
 
 func (m *UserService) Login(iUserDTO dto.UserLoginDTO) (model.User, string, error) {
@@ -47,7 +52,7 @@ func (m *UserService) Login(iUserDTO dto.UserLoginDTO) (model.User, string, erro
 		return model.User{}, "", errResult
 	}
 	// 登陆成功，生成token
-	token, err = utils.GenerateToken(iUser.ID, iUser.Name)
+	token, err = GenerateAndCacheLoginUserTokenToRedis(iUser.ID, iUser.Name)
 	if err != nil {
 		errResult = fmt.Errorf("generate token error: %s", err.Error())
 		return model.User{}, "", errResult
